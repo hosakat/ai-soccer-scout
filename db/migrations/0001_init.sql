@@ -1,5 +1,5 @@
 -- 0001_init.sql — AI Soccer Scout 初期スキーマ
--- 対象: TiDB Cloud Serverless (Frankfurt / Singapore リージョン、FULLTEXT beta 有効ティア)
+-- 対象: TiDB Cloud Starter (Frankfurt / Singapore リージョン、FULLTEXT beta 有効ティア)
 
 CREATE TABLE IF NOT EXISTS players (
   id              INT PRIMARY KEY AUTO_INCREMENT,
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS players (
   KEY idx_height (height_cm),
   UNIQUE KEY uk_external_key (external_key),
 
-  -- 全文検索 (TiDB Cloud Serverless beta、多言語パーサで日本語OK)
+  -- 全文検索 (TiDB Cloud Starter beta、多言語パーサで日本語OK)
   FULLTEXT INDEX ft_report (report_text) WITH PARSER MULTILINGUAL
 
   -- 注: VECTOR INDEX (HNSW) は TiFlash レプリカ必須のため Starter ティアでは作成不可。

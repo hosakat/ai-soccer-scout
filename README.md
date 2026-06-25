@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ⚽ AI Soccer Scout
 
-## Getting Started
+2026 FIFA W 杯出場選手をスカウトする AI アプリ。**TiDB Cloud Starter 1 本**で、SQL × ベクトル × 全文検索を **1 SQL に集約したハイブリッド検索** を実装。お気に入り傾向は **mem9** で覚えて再ランクに使う構成。
 
-First, run the development server:
+Zenn 技術記事執筆コンテスト「TiDB で作る AI 時代のデータ基盤」への投稿サンプル実装です。
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## できること
+
+- **ハード条件**（年齢・利き足・ポジション）+ **ソフト条件**（プレースタイル文・キーワード）を 1 行の自然言語で投げると、Query Understanding が 3 種類の検索条件に分解
+- TiDB の `VECTOR(1536)` + `FULLTEXT INDEX ... WITH PARSER MULTILINGUAL` + `WHERE` を 1 SELECT で同時評価
+- 検索結果は `vec_score / text_score / hybrid_score / mem9` のスコア内訳付きで返る
+- お気に入り登録すると mem9 が好み傾向を要約して保存、後続検索で再ランクに使う
+
+## スタック
+
+- Next.js 16 (App Router) + React 19 + Tailwind v4
+- TiDB Cloud Starter (`@tidbcloud/serverless`) — `VECTOR(N)` / `fts_match_word()` / `WITH PARSER MULTILINGUAL`
+- OpenAI `gpt-4o-mini` + `text-embedding-3-small`（structured output で NL → 構造化）
+- mem9 (`mem0ai` v3) — 派生プロファイルの保存と検索
+
+## はじめかた
+
+`.env.local` に以下を設定:
+
+```
+TIDB_DATABASE_URL=mysql://...
+OPENAI_API_KEY=sk-...
+MEM9_API_KEY=...        # 未設定なら no-op で動作
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+データ投入と起動:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npx tsx scripts/ingest/01_scrape_wikipedia.ts   # Wikipedia から W 杯出場選手
+npx tsx scripts/ingest/02_kaggle_match.ts       # EA FC 25 とファジーマッチ
+npx tsx scripts/ingest/03_generate_reports.ts   # LLM レポート + embedding 生成
+npx tsx scripts/ingest/04_insert_tidb.ts        # TiDB に投入
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+http://localhost:3000 を開いてスカウト開始。
 
-## Learn More
+## 解説記事
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+https://zenn.dev/ptwo/articles/37f94f47423eba
